@@ -1,4 +1,19 @@
-test
+#include <SPI.h>
+#include <MAX7219_Dot_Matrix.h>
+#define CS 10 //Set the CS digital pin number
+ #define modules 4     // 4 units of 8*8 module is connected to serial bus
+  //#define modules 1   // only one moudle is connected to serial bus
+
+/*
+PINOUT:
+MODULE.....UNO/NANO.....MEGA
+VCC........+5V..........+5V
+GND........GND..........GND
+DIN........11...........51
+CS (LOAD)..10...........10
+CLK........13...........52
+*/
+
 const int controlPin1 = 2;
 const int controlPin2 = 3;
 const int enablePin = 9;
@@ -13,20 +28,31 @@ int motorEnabled = 0;
 int motorSpeed = 0;
 int motorDirection = 1;
 void setup(){
+  {  
+  
+
+  /* Set the number of 8*8 module */
+  #define modules 4     // 4 units of 8*8 module is connected to serial bus
+  //#define modules 1   // only one moudle is connected to serial bus
+
+  MAX7219_Dot_Matrix myDisplay (modules, CS);  // Initialise with no. of module and CS pin
+  myDisplay.begin ();
+  myDisplay.setIntensity (15);
+  myDisplay.sendString ("1234"); //need to be in the loop area
+  }  // end of setup for LED 8x8 matrix
+  
+  
   pinMode(directionSwitchPin, INPUT);
   pinMode(onOffSwitchStateSwitchPin, INPUT);
   pinMode(controlPin1, OUTPUT);
   pinMode(controlPin2, OUTPUT);
   pinMode(enablePin, OUTPUT);
-  digitalWrite(enablePin, OUTPUT);
+  analogWrite(enablePin, OUTPUT);
 }
-void loop(){
-  onOffSwitchState = 1;
-    //digitalRead(onOffSwitchStateSwitchPin);
-  delay(1);
-  directionSwitchState = digitalRead(directionSwitchPin);
-  motorSpeed = 20/2;
-  if(onOffSwitchState != previousOnOffSwitchState){
+
+void motorrun(){
+motorSpeed = 100;
+  {
     if(onOffSwitchState == HIGH){
       motorEnabled = !motorEnabled;
     }
@@ -44,13 +70,17 @@ void loop(){
     digitalWrite(controlPin1, LOW);
     digitalWrite(controlPin2, HIGH);
   }
-  if(motorEnabled == 1) {
-    analogWrite(enablePin, motorSpeed);
+  
+  if(motorEnabled == 1) 
+  {analogWrite(enablePin, motorSpeed);} //L923D enabler
+  else 
+  {analogWrite(enablePin, 0);} //L923D disabler
+  
+  //previousDirectionSwitchState = directionSwitchState;
+  //previousOnOffSwitchState = onOffSwitchState;
   }
-  else {
-    analogWrite(enablePin, 0);
-  }
-  previousDirectionSwitchState = directionSwitchState;
-  previousOnOffSwitchState = onOffSwitchState;
 }
- 
+void loop(){
+
+
+  }
