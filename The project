@@ -79,7 +79,7 @@ motorSpeed = 100;
   //previousDirectionSwitchState = directionSwitchState;
   //previousOnOffSwitchState = onOffSwitchState;
   }
-}
+
 void loop(){
 
 
