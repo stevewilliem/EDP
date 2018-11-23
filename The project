@@ -1,28 +1,19 @@
-#include <SPI.h>
-#include <MAX7219_Dot_Matrix.h>
-/* Set the number of 8*8 module */
-#define CS 10 //Set the CS digital pin number
-#define modules 4     // 4 units of 8*8 module is connected to serial bus
-  //#define modules 1   // only one moudle is connected to serial bus
-
 /*
 PINOUT:
-MODULE..........UNO/NANO
------------------------------
-VCC.............+5V
-GND.............GND
-DIN.............11
-CS (LOAD).......10
-CLK.............13
---------------------
-enablePin........9
-motorsensor2.....7
-motorsensor1.....6
-playersensor2....5
-playersensor1....4
-controlPin2......3
-controlPin1 .....2
+MODULE.....UNO/NANO.....MEGA
+VCC........+5V..........+5V
+GND........GND..........GND
+DIN........11...........51
+CS (LOAD)..10...........10
+CLK........13...........52
+    
 */
+#include <SPI.h>
+#include <MAX7219_Dot_Matrix.h>
+#define CS 10
+#define modules 4
+
+MAX7219_Dot_Matrix myDisplay (modules, CS);
 
 const int controlPin1 = 2;
 const int controlPin2 = 3;
@@ -43,15 +34,15 @@ int sensorState1 = 1;
 int sensorState2 = 1;
 int score1 = 0;
 int score2 = 0;
+char message[] = "          ";
 
-void setup(){
-  {  
-  MAX7219_Dot_Matrix myDisplay (modules, CS);  // Initialise with no. of module and CS pin
+unsigned long lastMoved = 0;
+unsigned long MOVE_INTERVAL = 20; //mS
+int messageOffset;
+
+
+void setup() {
   myDisplay.begin ();
-  myDisplay.setIntensity (15);
-  myDisplay.sendString ("1234"); //need to be in the loop area
-  }  // end of setup for LED 8x8 matrix
-  
   pinMode(controlPin1, OUTPUT);
   pinMode(controlPin2, OUTPUT);
   pinMode(playersensor1, INPUT);
@@ -61,8 +52,16 @@ void setup(){
   pinMode(enablePin, OUTPUT);
   analogWrite(enablePin, OUTPUT);
 }
+void updateDisplay ()
+  {
+  myDisplay.sendSmooth (message, messageOffset);
+  
+  // next time show one pixel onwards
+  if (messageOffset++ >= (int) (strlen (message) * 8))
+    messageOffset = - modules * 8;
+  }  // end of updateDisplay
 
-void motorrun(){
+void motorRun(){
 motorSpeed = 100;
       motorEnabled = 1;
   if(motorDirection == 1) {
@@ -73,8 +72,8 @@ motorSpeed = 100;
     digitalWrite(controlPin1, LOW);
     digitalWrite(controlPin2, HIGH);
   }
-
-if(motorEnabled == 1) 
+  
+  if(motorEnabled == 1) 
   {analogWrite(enablePin, motorSpeed);
    delay(200);
    analogWrite(enablePin, 0);
@@ -82,37 +81,33 @@ if(motorEnabled == 1)
   else 
   {analogWrite(enablePin, 0);} //L923D disabler
   
-  //previousDirectionSwitchState = directionSwitchState;
-  //previousOnOffSwitchState = onOffSwitchState;
-  }
-
-void scoreboard(){
-   MAX7219_Dot_Matrix myDisplay (modules, CS);  // Initialise with no. of module and CS pin
-  myDisplay.begin ();
-  myDisplay.setIntensity (15);
-  if (score1 == 10 || score2 ==10){
-    myDisplay.sendString ("Game over"); //need to put scrolling text
-    delay(5000);
-    }
-  if (score1 > score2){
-    myDisplay.sendString ("player 1 wins");}
-  else if(score1 < score2){
-          myDisplay.sendString ("Player 2 wins");}
-          else if (score1 == score2){
-          myDisplay.sendString ("The game is draw");
-          }
+  previousDirectionSwitchState = directionSwitchState;
+  previousOnOffSwitchState = onOffSwitchState;
 }
-  
-void loop(){
-  if(digitalRead(playersensor1) == 0){
+
+void loop() {
+  // put your main code here, to run repeatedly:
+if(digitalRead(playersensor1) == 0){
     score1 += 1;
     motorDirection = 1;
-    motorrun();
+    motorRun();
   }
   if(digitalRead(playersensor2) == 0){
     score2 += 1;
     motorDirection = 0;
-    motorrun();
+    motorRun();
   }
-    
-  }
+  
+  if (score1 == 10 || score2 ==10){
+    char message ="Game over"; //need to put scrolling text
+    delay(5000);
+    updateDisplay ();
+    }
+
+
+ if (millis () - lastMoved >= MOVE_INTERVAL) //shift the word
+    {
+    updateDisplay ();
+    lastMoved = millis ();
+    }
+}
